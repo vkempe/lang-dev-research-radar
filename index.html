@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Development Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0e14;
+    --surface:  #111820;
+    --border:   #1e2a38;
+    --border2:  #2a3a50;
+    --text:     #d8e4f0;
+    --muted:    #5a7a96;
+    --accent:   #2dd4bf;        /* teal */
+    --accent2:  #f472b6;        /* pink for events */
+    --blue:     #38bdf8;
+    --warn:     #fb923c;
+    --ok:       #4ade80;
+    --err:      #f87171;
+    --font-ui:  'Syne', sans-serif;
+    --font-mono:'DM Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    min-height: 100vh;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .header-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 0 24px rgba(45,212,191,.35);
+  }
+  .header h1 {
+    font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .header h1 span { color: var(--accent); }
+  .header .subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 5px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 24px 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--blue), transparent);
+  }
+
+  /* ── Labels & Inputs ── */
+  .field { margin-bottom: 18px; }
+  label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+  }
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+  }
+  textarea { min-height: 72px; resize: vertical; line-height: 1.55; }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,212,191,.12);
+  }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%235a7a96' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row .field { flex: 1; min-width: 130px; }
+
+  /* ── Checkboxes ── */
+  .checks { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 20px; }
+  .check-item { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+  .check-item input[type="checkbox"] {
+    width: 17px; height: 17px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .check-item span {
+    font-size: 0.875rem;
+    color: var(--text);
+  }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0a1a18;
+  }
+  .btn-primary:hover { background: #5ee7d8; box-shadow: 0 0 16px rgba(45,212,191,.4); }
+  .btn-primary.cancelling { background: var(--err); color: #fff; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Status pill ── */
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: var(--border);
+    color: var(--muted);
+    transition: all .2s;
+  }
+  .status-pill.loading { background: rgba(251,146,60,.15); color: var(--warn); }
+  .status-pill.done    { background: rgba(74,222,128,.15); color: var(--ok); }
+  .status-pill.error   { background: rgba(248,113,113,.15); color: var(--err); }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    border-radius: 2px;
+    width: 0%;
+    transition: width .3s ease;
+  }
+
+  /* ── ISSN / Log panels ── */
+  .sub-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    line-height: 1.7;
+  }
+  .sub-panel .ok  { color: var(--ok); }
+  .sub-panel .bad { color: var(--err); }
+  .sub-panel code { color: var(--accent); }
+
+  /* ── Log ── */
+  .log-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    max-height: 110px;
+    overflow-y: auto;
+    display: none;
+    line-height: 1.65;
+  }
+
+  /* ── Results section ── */
+  .results-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .results-header h2 {
+    font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .results-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    border: 1px dashed var(--border2);
+    border-radius: 12px;
+  }
+  .empty-state .big { font-size: 2.5rem; margin-bottom: 12px; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84rem;
+  }
+  thead th {
+    background: var(--surface);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color .15s;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.active { color: var(--accent); }
+  thead th .si { opacity: .5; margin-left: 4px; }
+  thead th.active .si { opacity: 1; }
+  tbody tr { transition: background .12s; }
+  tbody tr:hover td { background: rgba(45,212,191,.04); }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .td-rank {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    width: 32px;
+  }
+  .title-link {
+    color: var(--blue);
+    text-decoration: none;
+    font-weight: 600;
+    line-height: 1.35;
+    display: block;
+    max-width: 480px;
+  }
+  .title-link:hover { color: var(--accent); text-decoration: underline; }
+  .author-line {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 3px;
+    max-width: 480px;
+  }
+  .journal-tag {
+    display: inline-block;
+    background: rgba(56,189,248,.12);
+    color: var(--blue);
+    border: 1px solid rgba(56,189,248,.2);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .date-cell {
+    font-family: var(--font-mono);
+    font-size: 0.77rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .metric-cell { min-width: 80px; }
+  .metric-val {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.85rem;
+  }
+  .bar-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .bar-fill         { height: 100%; border-radius: 2px; background: var(--accent); }
+  .bar-fill.events  { background: var(--accent2); }
+  .bar-fill.score   { background: linear-gradient(90deg, var(--accent), var(--blue)); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    body { padding: 16px 12px 60px; }
+    .header h1 { font-size: 1.5rem; }
+    .row .field { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<div class="header">
+  <div class="header-icon">🗣️</div>
+  <div>
+    <h1>Language Development <span>Radar</span></h1>
+    <div class="subtitle">Crossref · Citation Velocity · Event Data</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CONTROLS ═══════════════════════ -->
+<div class="card">
+
+  <div class="field">
+    <label for="journals">Journals (titles or ISSNs, comma-separated)</label>
+    <textarea id="journals">Language Development Research, Journal of Child Language, First Language, Language Acquisition, Applied Psycholinguistics, Language Learning and Development, Bilingualism: Language and Cognition, Journal of Speech Language and Hearing Research, Developmental Science, Journal of Memory and Language, Child Development, Infancy, Infant and Child Development</textarea>
+  </div>
+
+  <div class="field">
+    <label for="keywords">Keywords (OR-joined, comma-separated)</label>
+    <input type="text" id="keywords"
+      value="language development, language acquisition, child language, vocabulary development, syntax acquisition, phonological development, word learning, morphological development, bilingual children, multilingual acquisition">
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="authorQuery">Author <span style="font-size:.68rem;color:var(--muted);text-transform:none;letter-spacing:0">(searches author metadata only)</span></label>
+      <input type="text" id="authorQuery" placeholder="e.g. Lieven, Elena or Tomasello Michael">
+    </div>
+    <div class="field">
+      <label for="affiliation">Affiliation <span style="font-size:.68rem;color:var(--muted);text-transform:none;letter-spacing:0">(institution name)</span></label>
+      <input type="text" id="affiliation" placeholder="e.g. Max Planck Institute">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="timeWindow">Time window</label>
+      <select id="timeWindow">
+        <option value="days">Last X days</option>
+        <option value="year">Specific year</option>
+      </select>
+    </div>
+    <div class="field" id="daysField">
+      <label for="lastXDays">Last X days</label>
+      <input type="number" id="lastXDays" value="900" min="1">
+    </div>
+    <div class="field" id="yearField" style="display:none">
+      <label for="specificYear">Year</label>
+      <input type="number" id="specificYear" value="2024" min="1990" max="2030">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="topN">Top N (by impact score)</label>
+      <input type="number" id="topN" value="50" min="1" max="500">
+    </div>
+    <div class="field">
+      <label for="maxCandidates">Max candidates (journals &amp; keywords)</label>
+      <input type="number" id="maxCandidates" value="800" min="10" max="2000">
+    </div>
+  </div>
+
+  <div class="checks">
+    <label class="check-item" title="Weight articles by citations per month (faster-rising articles rank higher)">
+      <input type="checkbox" id="useCitVel" checked>
+      <span>Use citation-velocity</span>
+    </label>
+    <label class="check-item" title="Fetch Crossref Event Data: social media, Wikipedia, news mentions — proxy for press attention">
+      <input type="checkbox" id="useEvents" checked>
+      <span>Use Crossref Event Data</span>
+    </label>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="showISSNs()">Show resolved ISSNs</button>
+    <button class="btn btn-primary" id="loadBtn" onclick="toggleLoad()">Load Top Articles</button>
+    <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+    <span class="status-pill" id="statusPill">Idle</span>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="sub-panel" id="issnPanel"></div>
+  <div class="log-panel"  id="logPanel"></div>
+
+</div>
+
+<!-- ═══════════════════════ RESULTS ═══════════════════════ -->
+<div class="results-header">
+  <h2>Results</h2>
+  <span class="results-count" id="resultsCount"></span>
+</div>
+<div id="resultsArea">
+  <div class="empty-state">
+    <div class="big">📡</div>
+    Configure settings above, then click <strong>Load Top Articles</strong>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SCRIPT ═══════════════════════ -->
+<script>
+"use strict";
+
+// ─── Known ISSNs lookup ───────────────────────────────────
+const KNOWN = {
+  'language development research':                      ['2771-7976'],
+  'journal of child language':                          ['0305-0009','1469-7602'],
+  'first language':                                     ['0142-7237','1740-2344'],
+  'language acquisition':                               ['1048-9223','1532-7817'],
+  'applied psycholinguistics':                          ['0142-7164','1469-1817'],
+  'language learning and development':                  ['1547-5441','1547-545X'],
+  'bilingualism: language and cognition':               ['1366-7289','1469-1841'],
+  'bilingualism language and cognition':                ['1366-7289','1469-1841'],
+  'journal of speech language and hearing research':    ['1092-4388','1558-9102'],
+  'journal of speech, language, and hearing research':  ['1092-4388','1558-9102'],
+  'developmental science':                              ['1363-755X','1467-7687'],
+  'journal of memory and language':                     ['0749-596X','1096-0821'],
+  'cognition':                                          ['0010-0277','1873-7838'],
+  'child development':                                  ['0009-3920','1467-8624'],
+  'developmental psychology':                           ['0012-1649','1939-0599'],
+  'infancy':                                            ['1525-0008','1532-7078'],
+  'infant and child development':                       ['1522-7227','1522-7219'],
+  'language':                                           ['0097-8507','1535-0665'],
+  'journal of psycholinguistic research':               ['0090-6905','1573-6555'],
+  'lingua':                                             ['0024-3841','1873-1228'],
+  'languages':                                          ['2226-471X'],
+  'frontiers in psychology':                            ['1664-1078'],
+  'plos one':                                           ['1932-6203'],
+  'psychonomic bulletin & review':                      ['1069-9384','1531-5320'],
+  'journal of experimental child psychology':           ['0022-0965','1096-0457'],
+};
+
+// ─── State ───────────────────────────────────────────────
+let abort = null;
+let results = [];
+let sortCol = 'score';
+let sortAsc = false;
+
+// ─── Utilities ───────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function setStatus(msg, cls='') {
+  const el = $('statusPill');
+  el.textContent = msg;
+  el.className = 'status-pill' + (cls ? ' '+cls : '');
+}
+
+function setProgress(pct) {
+  if (pct == null) { $('progressWrap').style.display='none'; return; }
+  $('progressWrap').style.display='block';
+  $('progressFill').style.width = pct+'%';
+}
+
+function log(msg) {
+  const el = $('logPanel');
+  el.style.display = 'block';
+  const t = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  el.innerHTML += `<div><span style="color:var(--border2)">[${t}]</span> ${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+async function apiFetch(url, signal) {
+  const r = await fetch(url, { signal });
+  if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), {url});
+  return r.json();
+}
+
+// ─── ISSN Resolution ─────────────────────────────────────
+async function resolveJournals(names) {
+  const out = {};
+  for (const raw of names) {
+    const name = raw.trim();
+    if (!name) continue;
+    // Already an ISSN?
+    if (/^\d{4}-[\dX]{4}$/i.test(name)) { out[name] = [name]; continue; }
+    const key = name.toLowerCase();
+    if (KNOWN[key]) { out[name] = KNOWN[key]; continue; }
+    // Partial match
+    const found = Object.entries(KNOWN).find(([k]) => k.includes(key) || key.includes(k));
+    if (found) { out[name] = found[1]; continue; }
+    // Crossref API fallback
+    try {
+      const url = `https://api.crossref.org/journals?query=${encodeURIComponent(name)}&rows=3`;
+      const d = await apiFetch(url);
+      const items = d.message?.items || [];
+      const match = items.find(i => i.title?.toLowerCase().includes(key) || key.includes(i.title?.toLowerCase())) || items[0];
+      out[name] = match ? (match.ISSN || []) : [];
+      if (match) log(`Resolved "${name}" → ${(match.ISSN||[]).join(', ')}`);
+      else       log(`⚠ Could not resolve "${name}"`);
+    } catch(e) { out[name] = []; }
+    await sleep(200);
+  }
+  return out;
+}
+
+async function showISSNs() {
+  const panel = $('issnPanel');
+  panel.style.display = 'block';
+  panel.innerHTML = '<em style="color:var(--muted)">Resolving…</em>';
+  const names = $('journals').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const resolved = await resolveJournals(names);
+  let html = '';
+  for (const [name, issns] of Object.entries(resolved)) {
+    if (issns.length)
+      html += `<div><span class="ok">✓</span> ${esc(name)}: <code>${issns.join(', ')}</code></div>`;
+    else
+      html += `<div><span class="bad">✗</span> ${esc(name)}: not resolved</div>`;
+  }
+  panel.innerHTML = html || '<em style="color:var(--muted)">No journals entered.</em>';
+}
+
+// ─── Fetch works from Crossref ────────────────────────────
+async function fetchForISSN(issn, from, to, kw, author, affil, limit, signal) {
+  const works = [];
+  const size = 100;
+  const pages = Math.ceil(limit / size);
+  const sel = 'DOI,title,author,published,is-referenced-by-count,container-title,URL';
+  for (let p=0; p<pages; p++) {
+    if (signal?.aborted) break;
+    // IMPORTANT: Crossref filter uses raw commas and colons as separators.
+    // URLSearchParams encodes commas as %2C which breaks the API → build URL as a raw string.
+    const filterRaw = `issn:${issn},from-pub-date:${from},until-pub-date:${to}`;
+    const kwPart    = kw.length    ? `&query=${encodeURIComponent(kw.join(' '))}` : '';
+    const authPart  = author       ? `&query.author=${encodeURIComponent(author)}` : '';
+    const affilPart = affil        ? `&query.affiliation=${encodeURIComponent(affil)}` : '';
+    const url = `https://api.crossref.org/works?filter=${filterRaw}&rows=${size}&offset=${p*size}&select=${sel}&mailto=langdevradar@placeholder.ac.uk${kwPart}${authPart}${affilPart}`;
+    try {
+      const d = await apiFetch(url, signal);
+      const items = d.message?.items || [];
+      log(`  ${issn} p${p}: got ${items.length} items (total-results: ${d.message?.['total-results']})`);
+      works.push(...items);
+      if (items.length < size || works.length >= limit) break;
+    } catch(e) {
+      if (e.name==='AbortError') throw e;
+      log(`Warn: ${issn} page ${p}: ${e.message}`);
+      break;
+    }
+    await sleep(120);
+  }
+  return works.slice(0, limit);
+}
+
+// ─── Crossref Event Data ──────────────────────────────────
+async function getEventCount(doi, signal) {
+  try {
+    const url = `https://api.eventdata.crossref.org/v1/events?obj-id=https://doi.org/${doi}&rows=0`;
+    const d = await apiFetch(url, signal);
+    return d.message?.total || 0;
+  } catch(e) {
+    if (e.name==='AbortError') throw e;
+    return 0;
+  }
+}
+
+// ─── Main loader ─────────────────────────────────────────
+async function loadTopArticles() {
+  const signal = abort.signal;
+
+  const names    = $('journals').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const kw       = $('keywords').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const author   = $('authorQuery').value.trim();
+  const affil    = $('affiliation').value.trim();
+  const tw       = $('timeWindow').value;
+  const days     = parseInt($('lastXDays').value)||900;
+  const topN     = parseInt($('topN').value)||50;
+  const maxC     = parseInt($('maxCandidates').value)||800;
+  const citVel   = $('useCitVel').checked;
+  const useEv    = $('useEvents').checked;
+
+  const now = new Date();
+  let from, to;
+  if (tw==='days') {
+    from = new Date(now - days*864e5).toISOString().split('T')[0];
+    to   = now.toISOString().split('T')[0];
+  } else {
+    const yr = parseInt($('specificYear').value);
+    from = `${yr}-01-01`; to = `${yr}-12-31`;
+  }
+
+  log(`Search window: ${from} → ${to}`);
+  if (author) log(`Author filter: "${author}"`);
+  if (affil)  log(`Affiliation filter: "${affil}"`);
+
+  // 1. Resolve ISSNs
+  setStatus('Resolving journals…','loading'); setProgress(3);
+  const resolved = await resolveJournals(names);
+  const allISSNs = [...new Set(Object.values(resolved).flat())].filter(Boolean);
+  log(`Using ${allISSNs.length} ISSNs`);
+  if (!allISSNs.length) { setStatus('No ISSNs resolved','error'); return; }
+
+  // 2. Fetch works
+  const seen = new Map();
+  const perISSN = Math.ceil(maxC / allISSNs.length);
+  for (let i=0; i<allISSNs.length; i++) {
+    if (signal.aborted) break;
+    setProgress(3 + (i/allISSNs.length)*38);
+    setStatus(`Fetching ${allISSNs[i]} (${i+1}/${allISSNs.length})…`, 'loading');
+    const works = await fetchForISSN(allISSNs[i], from, to, kw, author, affil, perISSN, signal);
+    log(`${allISSNs[i]}: ${works.length} articles`);
+    for (const w of works) if (w.DOI && !seen.has(w.DOI)) seen.set(w.DOI, w);
+  }
+
+  let candidates = [...seen.values()];
+  log(`Total unique candidates: ${candidates.length}`);
+
+  // 3. Age
+  const nowMs = Date.now();
+  for (const w of candidates) {
+    const dp = w.published?.['date-parts']?.[0] || [now.getFullYear(),1,1];
+    const d  = new Date(dp[0], (dp[1]||1)-1, dp[2]||1);
+    w._date  = d;
+    w._ageM  = Math.max((nowMs - d)/2592e6, 0.1);
+  }
+
+  // 4. Pre-sort → limit to maxC
+  candidates.sort((a,b) => {
+    const aS = (a['is-referenced-by-count']||0) / (citVel ? a._ageM : 1);
+    const bS = (b['is-referenced-by-count']||0) / (citVel ? b._ageM : 1);
+    return bS - aS;
+  });
+  candidates = candidates.slice(0, maxC);
+
+  // 5. Event Data (capped at 200 API calls to keep it reasonable)
+  if (useEv) {
+    const evLimit = Math.min(candidates.length, 200);
+    setStatus(`Fetching event data (0/${evLimit})…`, 'loading');
+    for (let i=0; i<evLimit; i++) {
+      if (signal.aborted) break;
+      if (i%10===0) {
+        setProgress(41 + (i/evLimit)*42);
+        setStatus(`Event data ${i+1}/${evLimit}…`, 'loading');
+      }
+      candidates[i]._ev = await getEventCount(candidates[i].DOI, signal);
+      if (i%8===7) await sleep(80);
+    }
+    for (let i=evLimit; i<candidates.length; i++) candidates[i]._ev = 0;
+  } else {
+    for (const w of candidates) w._ev = 0;
+  }
+
+  // 6. Score
+  const maxCit = Math.max(...candidates.map(w => (w['is-referenced-by-count']||0)/(citVel?w._ageM:1)), 1);
+  const maxEv  = Math.max(...candidates.map(w => w._ev||0), 1);
+  for (const w of candidates) {
+    w._citPerMonth = (w['is-referenced-by-count']||0) / w._ageM;
+    const cs = (w['is-referenced-by-count']||0) / (citVel ? w._ageM : 1);
+    w._citN  = cs / maxCit;
+    w._evN   = (w._ev||0) / maxEv;
+    w._score = (useEv && maxEv > 1) ? 0.65*w._citN + 0.35*w._evN : w._citN;
+  }
+  candidates.sort((a,b)=>b._score-a._score);
+  results = candidates.slice(0, topN);
+
+  log(`Displaying top ${results.length}`);
+  setStatus(`Done — ${results.length} articles`, 'done');
+  setProgress(100);
+  setTimeout(()=>setProgress(null), 1200);
+  render(results);
+}
+
+// ─── Render table ─────────────────────────────────────────
+function render(items) {
+  const useEv = $('useEvents').checked;
+  $('resultsCount').textContent = items.length ? `${items.length} articles` : '';
+
+  if (!items.length) {
+    $('resultsArea').innerHTML = `<div class="empty-state"><div class="big">🔍</div>No results found. Try adjusting journals, keywords, or date range.</div>`;
+    return;
+  }
+
+  const maxCit  = Math.max(...items.map(i=>i['is-referenced-by-count']||0), 1);
+  const maxCitV = Math.max(...items.map(i=>i._citPerMonth||0), 0.01);
+  const maxEv   = Math.max(...items.map(i=>i._ev||0), 1);
+  const maxScr  = Math.max(...items.map(i=>i._score||0), 1);
+
+  let html = `
+  <div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-ghost" onclick="exportCSV()" style="font-size:.8rem;padding:6px 14px">⬇ Export CSV</button>
+  </div>
+  <div class="table-wrap"><table>
+  <thead><tr>
+    <th onclick="sortBy('rank')"  class="${sortCol==='rank'?'active':''}">#</th>
+    <th onclick="sortBy('title')" class="${sortCol==='title'?'active':''}">Title &amp; Authors <span class="si">↕</span></th>
+    <th onclick="sortBy('journal')"class="${sortCol==='journal'?'active':''}">Journal <span class="si">↕</span></th>
+    <th onclick="sortBy('date')"  class="${sortCol==='date'?'active':''}">Published <span class="si">↕</span></th>
+    <th onclick="sortBy('cit')"   class="${sortCol==='cit'?'active':''}">Citations <span class="si">↕</span></th>
+    <th onclick="sortBy('citv')"  class="${sortCol==='citv'?'active':''}">Cit/month <span class="si">↕</span></th>
+    ${useEv?`<th onclick="sortBy('ev')" class="${sortCol==='ev'?'active':''}">Events <span class="si">↕</span></th>`:''}
+    <th onclick="sortBy('score')" class="${sortCol==='score'?'active':''}">Impact Score <span class="si">↕</span></th>
+  </tr></thead><tbody>`;
+
+  items.forEach((w,i)=>{
+    const title = esc(w.title?.[0]||'Untitled');
+    const doi   = w.DOI||'';
+    const url   = `https://doi.org/${doi}`;
+    const jrnl  = esc(w['container-title']?.[0]||'');
+    const cit   = w['is-referenced-by-count']||0;
+    const citv  = (w._citPerMonth||0).toFixed(2);
+    const cvbw  = pct(w._citPerMonth||0, maxCitV);
+    const ev    = w._ev||0;
+    const score = ((w._score||0)*100).toFixed(1);
+    const cbw   = pct(cit,maxCit);
+    const ebw   = pct(ev,maxEv);
+    const sbw   = pct(w._score||0,maxScr);
+    const auth  = esc(fmtAuthor(w));
+    const date  = fmtDate(w);
+
+    html += `<tr>
+      <td class="td-rank">${i+1}</td>
+      <td><a href="${url}" target="_blank" class="title-link">${title}</a>
+          <div class="author-line">${auth}</div></td>
+      <td><span class="journal-tag">${jrnl}</span></td>
+      <td class="date-cell">${date}</td>
+      <td class="metric-cell"><span class="metric-val">${cit}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${cbw}%"></div></div></td>
+      <td class="metric-cell"><span class="metric-val">${citv}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${cvbw}%;opacity:.7"></div></div></td>
+      ${useEv?`<td class="metric-cell"><span class="metric-val">${ev}</span>
+          <div class="bar-track"><div class="bar-fill events" style="width:${ebw}%"></div></div></td>`:''}
+      <td class="metric-cell"><span class="metric-val">${score}</span>
+          <div class="bar-track"><div class="bar-fill score" style="width:${sbw}%"></div></div></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  $('resultsArea').innerHTML = html;
+}
+
+// ─── Sorting ─────────────────────────────────────────────
+function sortBy(col) {
+  if (sortCol===col) sortAsc=!sortAsc;
+  else { sortCol=col; sortAsc=false; }
+  const d = sortAsc ? 1 : -1;
+  const s = [...results].sort((a,b)=>{
+    switch(col) {
+      case 'title':   return d*(a.title?.[0]||'').localeCompare(b.title?.[0]||'');
+      case 'journal': return d*(a['container-title']?.[0]||'').localeCompare(b['container-title']?.[0]||'');
+      case 'date':    return d*((a._date||0)-(b._date||0));
+      case 'cit':     return d*((a['is-referenced-by-count']||0)-(b['is-referenced-by-count']||0));
+      case 'citv':    return d*((a._citPerMonth||0)-(b._citPerMonth||0));
+      case 'ev':      return d*((a._ev||0)-(b._ev||0));
+      case 'score':   return d*((a._score||0)-(b._score||0));
+      default:        return 0;
+    }
+  });
+  render(s);
+}
+
+// ─── Toggle load / cancel ─────────────────────────────────
+async function toggleLoad() {
+  if (abort) {
+    abort.abort(); abort=null;
+    $('loadBtn').textContent='Load Top Articles';
+    $('loadBtn').classList.remove('cancelling');
+    setStatus('Cancelled','error'); setProgress(null);
+    return;
+  }
+  abort = new AbortController();
+  $('loadBtn').textContent='Cancel';
+  $('loadBtn').classList.add('cancelling');
+  $('logPanel').style.display='none';
+  $('logPanel').innerHTML='';
+  try {
+    await loadTopArticles();
+  } catch(e) {
+    if (e.name==='AbortError') { setStatus('Cancelled','error'); }
+    else { setStatus(`Error: ${e.message}`,'error'); log(`Error: ${e.message}`); console.error(e); }
+  } finally {
+    abort=null;
+    $('loadBtn').textContent='Load Top Articles';
+    $('loadBtn').classList.remove('cancelling');
+  }
+}
+
+function clearAll() {
+  if (abort) { abort.abort(); abort=null; }
+  results=[];
+  $('resultsArea').innerHTML=`<div class="empty-state"><div class="big">📡</div>Configure settings above, then click <strong>Load Top Articles</strong></div>`;
+  $('resultsCount').textContent='';
+  $('issnPanel').style.display='none';
+  $('logPanel').style.display='none';
+  $('logPanel').innerHTML='';
+  setStatus('Idle'); setProgress(null);
+  $('loadBtn').textContent='Load Top Articles';
+  $('loadBtn').classList.remove('cancelling');
+}
+
+// ─── CSV Export ──────────────────────────────────────────
+function exportCSV() {
+  const useEv = $('useEvents').checked;
+  const hdr = ['Rank','Title','Authors','Journal','Published','DOI','Citations','Cit/month',useEv?'Events':'','Score'].filter(Boolean);
+  const rows = results.map((w,i)=>[
+    i+1,
+    `"${(w.title?.[0]||'').replace(/"/g,'""')}"`,
+    `"${fmtAuthor(w).replace(/"/g,'""')}"`,
+    `"${(w['container-title']?.[0]||'').replace(/"/g,'""')}"`,
+    fmtDate(w),
+    w.DOI||'',
+    w['is-referenced-by-count']||0,
+    (w._citPerMonth||0).toFixed(2),
+    useEv?(w._ev||0):'',
+    ((w._score||0)*100).toFixed(2)
+  ].filter((_,j)=>hdr[j]!==undefined&&hdr[j]!==''));
+
+  const csv = [hdr, ...rows].map(r=>r.join(',')).join('\n');
+  const a   = document.createElement('a');
+  a.href    = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download= 'lang_dev_radar_results.csv';
+  a.click();
+}
+
+// ─── Helpers ─────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pct(v,max) { return Math.round((v/max)*100); }
+function fmtDate(w) {
+  const p = w.published?.['date-parts']?.[0];
+  if (!p) return '–';
+  return p.length>1 ? `${p[0]}-${String(p[1]).padStart(2,'0')}` : String(p[0]);
+}
+function fmtAuthor(w) {
+  const a = w.author||[];
+  if (!a.length) return '';
+  const f = a[0];
+  const nm = [f.family, f.given?.charAt(0)].filter(Boolean).join(' ');
+  return a.length>1 ? `${nm} et al.` : nm;
+}
+
+// ─── Time window toggle ───────────────────────────────────
+$('timeWindow').addEventListener('change',function(){
+  $('daysField').style.display = this.value==='days'?'':'none';
+  $('yearField').style.display = this.value==='year'?'':'none';
+});
+</script>
+</body>
+</html>
